@@ -1,13 +1,41 @@
+%{
+
+function cons(list, e){
+  list.push(e)
+  return list
+}
+function last(list){
+  return list[list.length-1]
+}
+function Rel(from, assoc, to) {
+  return {from, assoc, to}
+}
+function Rel(from, assoc, to) {
+  return {from, assoc, to}
+}
+function Part(lines, nodes, rels) {
+  return {lines, nodes, rels}
+}
+function Node(type, name, parts) {
+  return {t:type, name, parts}
+}
+
+%}
+
 %lex
 %%
 
-\s*\|\s*                          return '|'
-(\\(\[|\]|\|)|[^\]\[|;\n])+       return 'IDENT'
-"["                               return '['
-\s*\]                             return ']'
-[ ]*(\;|\n)+[ ]*                  return 'SEP'
-<<EOF>>                           return 'EOF'
-.                                 return 'INVALID'
+\s*\|\s*                              return '|'
+"["                                   return '['
+"]"                                   return ']'
+"[<"                                  return '[<'
+">"                                   return '>'
+[ ]*[;\n]+[ ]*                        return 'SEP'
+\<[a-zA-Z]+\>                         return 'TYPE'
+\s*[<>:|o+-]+\s*                      return 'ASSOC'
+((\\\[|\\\]|\\;|\\\|)|[^\[\];|\n])+   return 'TXT'
+<<EOF>>                               return 'EOF'
+.                                     return 'INVALID'
 
 /lex
 
@@ -16,37 +44,29 @@
 %% /* ------------------------------------------------- */
 
 root
-    : compartment EOF      { return $1 };
+ : part EOF             { return $1 }
+;
 
-slot
-  : IDENT                  {$$ = $1.trim().replace(/\\(\[|\]|\|)/g, '$'+'1');}
-  | class                  {$$ = $1;}
-  | association            {$$ = $1;};
+part
+ : rels                 { $$ = Part([], [], $1) }
+ | node                 { $$ = Part([], [$1], []) }
+ | TXT                  { $$ = Part([$1], [], []) }
+ | part SEP rels        { $$ = cons($1.rels, $3) && $1 }
+ | part SEP node        { $$ = cons($1.nodes, $3) && $1 }
+ | part SEP TXT         { $$ = cons($1.lines, $3) && $1 }
+;
 
-compartment
-  : slot                   {$$ = [$1];}
-  | compartment SEP slot   {$$ = $1.concat($3);};
+rels
+ : rels ASSOC node      { $$ = cons($1, Rel(last($1).to, $2, $3)) }
+ | node ASSOC node      { $$ = [Rel($1,$2,$3)] }
+;
 
 parts
-  : compartment            {$$ = [$1];}
-  | parts '|' compartment  {$$ = $1.concat([$3]);}
-  | parts '|'              {$$ = $1.concat([[]]);};
+ : part                 { $$ = [$1] }
+ | parts '|' part       { $$ = cons($1, $3) }
+;
 
-association
-  : class IDENT class      {
-           var t = $2.trim().replace(/\\(\[|\]|\|)/g, '$'+'1').match('^(.*?)([<:o+]*-/?-*[:o+>]*)(.*)$');
-           $$ = {assoc:t[2], start:$1, end:$3, startLabel:t[1].trim(), endLabel:t[3].trim()};
-  };
-
-class
-  : '[' parts ']'          {
-           var type = 'CLASS';
-           var id = $2[0][0];
-           var typeMatch = $2[0][0].match('<([a-z]*)>(.*)');
-           if (typeMatch) {
-               type = typeMatch[1].toUpperCase();
-               id = typeMatch[2].trim();
-           }
-           $2[0][0] = id;
-           $$ = {type:type, id:id, parts:$2};
-  };
+node
+ : '[' parts ']'        { $$ = Node('<class>', $2[0].lines[0], $2) }
+ | '[' TYPE parts ']'   { $$ = Node($2, $3[0].lines[0], $3) }
+;
