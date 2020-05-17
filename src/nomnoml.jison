@@ -1,8 +1,11 @@
 %{
 var cons = (list, e) => (list.push(e), list)
 var last = (list) => (list[list.length-1])
-var Rel = (from, assoc, to)  => ({from, assoc, to})
-var Rel = (from, assoc, to)  => ({from, assoc, to})
+var Assoc = (labelA, style, labelB) => ({labelA, style, labelB})
+var Rel = (start, assoc, end)  => {
+  var t = assoc.match('^(.*?)([<:o+]*-/?-*[:o+>]*)(.*)$');
+  return {assoc:t[2], start, end, startLabel:t[1].trim(), endLabel:t[3].trim()};
+}
 var Part = (lines, nodes, rels)  => ({lines, nodes, rels})
 var Node = (type, name, parts)  => ({t:type, name, parts})
 %}
@@ -21,8 +24,8 @@ var Node = (type, name, parts)  => ({t:type, name, parts})
 "]"                                   return ']'
 [;\n]+                                return 'SEP'
 \<[a-zA-Z]+\>                         return 'TYPE'
-[<>:|o+-]+                            return 'ASSOC'
-[^\[\];|\n\\]+                        return 'TXT'
+[^\[\];|\n]*[^\[\];|\n\\]             return 'TXT'
+\\s*                                  return 'WS'
 <<EOF>>                               return 'EOF'
 .                                     return 'INVALID'
 /lex
@@ -43,7 +46,7 @@ text
  ;
 
 part
- : rels                 { $$ = Part([], [], $1) }
+ : rels                 { $$ = $1 }
  | node                 { $$ = Part([], [$1], []) }
  | text                 { $$ = Part([$1], [], []) }
  | part SEP rels        { $$ = cons($1.rels, $3) && $1 }
@@ -52,8 +55,8 @@ part
 ;
 
 rels
- : rels ASSOC node      { $$ = cons($1, Rel(last($1).to, $2, $3)) }
- | node ASSOC node      { $$ = [Rel($1,$2,$3)] }
+ : rels text node        { $$ = cons($1.rels, Rel(last($1.rels).end, $2, $3.name)) && cons($1.nodes, $3) && $1 }
+ | node text node        { $$ = Part([], [$1,$2], [Rel($1.name,$2,$3.name)]) }
 ;
 
 parts
