@@ -1,13 +1,12 @@
 %{
   var cons = (list, e) => (list.push(e), list)
   var last = (list) => (list[list.length-1])
-  var Assoc = (labelA, style, labelB) => ({labelA, style, labelB})
   var Rel = (start, assoc, end)  => {
     var t = assoc.match('^(.*?)([<:o+]*-/?-*[:o+>]*)(.*)$');
     return {assoc:t[2], start, end, startLabel:t[1].trim(), endLabel:t[3].trim()};
   }
   var Part = (lines, nodes, rels)  => ({lines, nodes, rels})
-  var Node = (type, name, parts)  => ({t:type, name, parts})
+  var Node = (type, name, parts)  => ({type, name, parts})
   function withRelTo(part, assoc, node) {
     part.rels.push(Rel(last(part.rels).end, assoc, node.name));
     part.nodes.push(node);

@@ -4,17 +4,23 @@ namespace nomnoml {
 		config: Config
 	}
 	export type AstRoot = AstCompartment
-	type AstCompartment = AstSlot[]
-	type AstSlot = string | AstClassifier | AstRelation
-	type AstCompartmentList = AstCompartment[]
+	interface AstClassifier {
+		type: string,
+		name: string,
+		parts: AstCompartment[]
+	}
+	interface AstCompartment {
+		lines: string[]
+		nodes: AstClassifier[]
+		rels: AstRelation[]
+	}
 	interface AstRelation {
 		assoc: string,
-		start: AstClassifier,
-		end: AstClassifier,
+		start: string,
+		end: string,
 		startLabel: string,
 		endLabel: string
 	}
-	interface AstClassifier { type: string, id: string, parts: AstCompartment[] }
 
 	declare var nomnomlCoreParser: { parse(source: string): AstRoot }
 
@@ -117,43 +123,21 @@ namespace nomnoml {
 	}
 
 	export function transformParseIntoSyntaxTree(entity: AstRoot): Compartment {
-
-		function isAstClassifier(obj: AstSlot): obj is AstClassifier {
-			return (<AstClassifier>obj).parts !== undefined
-		}
-
-		function isAstRelation(obj: AstSlot): obj is AstRelation {
-			return (<AstRelation>obj).assoc !== undefined
-		}
-
-		function isAstCompartment(obj: any): obj is AstCompartment {
-			return Array.isArray(obj)
-		}
-
 		var relationId: number = 0
 
 		function transformCompartment(slots: AstCompartment): Compartment {
-			var lines: string[] = []
-			var rawClassifiers: AstClassifier[] = []
+			var lines: string[] = slots.lines
+			var rawClassifiers: AstClassifier[] = slots.nodes
 			var relations: Relation[] = []
-			slots.forEach(function (p: AstSlot){
-				if (typeof p === 'string')
-					lines.push(p)
-				if (isAstRelation(p)){ // is a relation
-					rawClassifiers.push(p.start)
-					rawClassifiers.push(p.end)
-					relations.push({
-							id: relationId++,
-							assoc: p.assoc,
-							start: p.start.parts[0][0] as string,
-							end: p.end.parts[0][0] as string,
-							startLabel: p.startLabel,
-							endLabel: p.endLabel
-						})
-					}
-				if (isAstClassifier(p)){
-					rawClassifiers.push(p)
-				}
+			slots.rels.forEach(function (p: AstRelation){
+				relations.push({
+					id: relationId++,
+					assoc: p.assoc,
+					start: p.start,
+					end: p.end,
+					startLabel: p.startLabel,
+					endLabel: p.endLabel
+				})
 			})
 			var allClassifiers: Classifier[] = rawClassifiers
 				.map(transformClassifier)
@@ -173,7 +157,7 @@ namespace nomnoml {
 
 		function transformClassifier(entity: AstClassifier): Classifier {
 				var compartments = entity.parts.map(transformCompartment)
-				return new Classifier(entity.type, entity.id, compartments)
+				return new Classifier(entity.type, entity.name, compartments)
 		}
 
 		return transformCompartment(entity)
