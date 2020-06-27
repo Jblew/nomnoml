@@ -22,3 +22,24 @@ skanaar.format = function format(template /* variadic params */){
     var parts = Array.prototype.slice.call(arguments, 1)
     return _.flatten(_.zip(template.split('#'), parts)).join('')
 }
+
+skanaar.hexToRgb = function (hex) {
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+    } : null;
+}
+
+String.prototype.replaceAt=function(index, character) {
+    return this.substr(0, index) + character + this.substr(index+character.length);
+}
+
+String.prototype.padLeft = function(n, str) {
+    return Array(n-this.length+1).join(str||'0')+this;
+}
+
+Number.prototype.padLeft = function (n,str){
+    return Array(n-String(this).length+1).join(str||'0')+this;
+}

@@ -96,6 +96,9 @@ skanaar.Svg = function (globalStyle){
 		},
 		font: function (font){
 			last(states).font = font;
+                        console.log("<!--\n\n");
+                        console.log(font);
+                        console.log("-->");
 		},
 		strokeStyle: function (stroke){
 			last(states).stroke = stroke

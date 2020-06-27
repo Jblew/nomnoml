@@ -1,6 +1,6 @@
 var skanaar = skanaar || {}
 skanaar.Canvas = function (canvas, callbacks){
-	var ctx = canvas.getContext('2d');
+	var ctx = canvas.getContext('2d', {alpha: true});
 	var mousePos = { x: 0, y: 0 }
 	var twopi = 2*3.1416
 
@@ -148,7 +148,21 @@ skanaar.Canvas = function (canvas, callbacks){
 		},
 		font:        function (f){ ctx.font = f },
 		fillStyle:   function (s){ ctx.fillStyle = s },
+                appendFillAlpha:   function (a){ 
+                    if(ctx.fillStyle.length === 7) {
+                        var rgb = skanaar.hexToRgb(ctx.fillStyle);
+                        if(rgb !== null) ctx.fillStyle = "rgba("+rgb.r+","+rgb.g+","+rgb.b+","+a+")";
+                        else console.log("Cannot read rgb for "+ctx.fillStyle);
+                    }
+                },
 		strokeStyle: function (s){ ctx.strokeStyle = s },
+                appendStrokeAlpha:   function (a){ 
+                    if(ctx.strokeStyle.length === 7) {
+                        var rgb = skanaar.hexToRgb(ctx.strokeStyle);
+                        if(rgb !== null) ctx.strokeStyle = "rgba("+rgb.r+","+rgb.g+","+rgb.b+","+a+")";
+                        else console.log("Cannot read rgb for "+ctx.strokeStyle);
+                    }
+                },
 		textAlign:   function (a){ ctx.textAlign = a },
 
 		lineCap: function (cap){ ctx.lineCap = cap },

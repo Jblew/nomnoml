@@ -28,6 +28,26 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 		START:    { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: X, visual: 'start' },
 		STATE:    { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'roundrect' },
 		USECASE:  { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'ellipse' },
+                
+                SEMIABSTRACT: { center: X, bold: 0, underline: 0, italic: X, dashed: 0, empty: 0, visual: 'class', semi: true },
+		SEMIACTOR:    { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'actor', semi: true  },
+		SEMICHOICE:   { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'rhomb', semi: true  },
+		SEMICLASS:    { center: X, bold: X, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'class', semi: true  },
+		SEMIDATABASE: { center: X, bold: X, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'database', semi: true  },
+		SEMIEND:      { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: X, visual: 'end', semi: true  },
+		SEMIFRAME:    { center: 0, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'frame', semi: true  },
+		SEMIHIDDEN:   { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: X, visual: 'hidden', semi: true  },
+		SEMIINPUT:    { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'input', semi: true  },
+		SEMIINSTANCE: { center: X, bold: 0, underline: X, italic: 0, dashed: 0, empty: 0, visual: 'class', semi: true  },
+		SEMILABEL:    { center: 0, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'none', semi: true  },
+		SEMINOTE:     { center: 0, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'note', semi: true  },
+		SEMIPACKAGE:  { center: 0, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'package', semi: true  },
+		SEMIRECEIVER: { center: 0, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'receiver', semi: true  },
+		SEMIREFERENCE:{ center: X, bold: 0, underline: 0, italic: 0, dashed: X, empty: 0, visual: 'class', semi: true  },
+		SEMISENDER:   { center: 0, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'sender', semi: true  },
+		SEMISTART:    { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: X, visual: 'start', semi: true  },
+		SEMISTATE:    { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'roundrect', semi: true  },
+		SEMIUSECASE:  { center: X, bold: 0, underline: 0, italic: 0, dashed: 0, empty: 0, visual: 'ellipse', semi: true  },
 	}
 
 	_.extend(styles, config.styles)
@@ -144,11 +164,13 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 		},
 	}
 
-	function renderCompartment(compartment, style, level){
+	function renderCompartment(compartment, style, level, semi){
 		g.save()
 		g.translate(padding, padding)
 		g.fillStyle(config.stroke)
+                if(style.semi || semi) g.appendFillAlpha(0.5);
 		_.each(compartment.lines, function (text, i){
+                        text = stripBracketedNumbers(text);
 			g.textAlign(style.center ? 'center' : 'left')
 			var x = style.center ? compartment.width/2 - padding : 0
 			var y = (0.5+(i+0.5)*config.leading)*config.fontSize
@@ -168,12 +190,18 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 		g.restore()
 	}
 
-	function renderNode(node, level){
+	function renderNode(node, level){            
 		var x = Math.round(node.x-node.width/2)
 		var y = Math.round(node.y-node.height/2)
 		var style = styles[node.type] || styles.CLASS
 
 		g.fillStyle(style.fill || config.fill[level] || _.last(config.fill))
+                g.strokeStyle(config.stroke)
+                if(node.type.startsWith("SEMI")) {
+                    g.appendFillAlpha(0.5)
+                    g.appendStrokeAlpha(0.5)
+                    
+                }
 		if (style.dashed){
 			var dash = Math.max(4, 2*config.lineWidth)
 			g.setLineDash([dash, dash])
@@ -189,7 +217,7 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 			g.save()
 			g.translate(x, yDivider)
 			setFont(config, s.bold ? 'bold' : 'normal', s.italic)
-			renderCompartment(part, s, level+1)
+			renderCompartment(part, s, level+1, node.type.startsWith("SEMI"))
 			g.restore()
 			if (i+1 === node.compartments.length) return
 			yDivider += part.height
@@ -222,19 +250,21 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 			g.path(p).stroke()
 	}
 
-	var empty = false, filled = true, diamond = true
+	var empty = false, filled = true, diamond = true, inhibition = true
 
 	function renderRelation(r, compartment){
 		var startNode = _.findWhere(compartment.nodes, {name:r.start})
 		var endNode = _.findWhere(compartment.nodes, {name:r.end})
-
-		var start = rectIntersection(r.path[1], _.first(r.path), startNode)
-		var end = rectIntersection(r.path[r.path.length-2], _.last(r.path), endNode)
-
+                var tokens = r.assoc.split('-')
+                         
+		var start = rectIntersection(r.path[1], _.first(r.path), growRect(startNode,  (_.first(tokens)===":<" || _.first(tokens)===">:")? 13 : 3))
+		var end = rectIntersection(r.path[r.path.length-2], _.last(r.path), growRect(endNode, (_.last(tokens)===":<" || _.last(tokens)===">:")? 13 : 3))
+                
 		var path = _.flatten([start, _.tail(_.initial(r.path)), end])
 		var fontSize = config.fontSize
 
 		g.fillStyle(config.stroke)
+                if(skanaar.hasSubstring(r.assoc, '-@-')) g.appendFillAlpha(0.5)
 		setFont(config, 'normal')
 		var textW = g.measureText(r.endLabel).width
 		var labelX = config.direction === 'LR' ? -padding-textW : padding
@@ -242,30 +272,47 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 		if (r.endLabel)	 g.fillText(r.endLabel, end.x+labelX, end.y-padding)
 
 		if (r.assoc !== '-/-'){
-			if (g.setLineDash && skanaar.hasSubstring(r.assoc, '--')){
-				var dash = Math.max(4, 2*config.lineWidth)
-				g.setLineDash([dash, dash])
-				strokePath(path)
-				g.setLineDash([])
-			}
-			else
-				strokePath(path)
+                    if (g.setLineDash && g.strokeStyle && skanaar.hasSubstring(r.assoc, '-@--')){
+                        var dash = Math.max(4, 2*config.lineWidth)
+                        g.setLineDash([dash, dash])
+                        g.appendStrokeAlpha(0.5)
+                        strokePath(path)
+                        g.strokeStyle(config.stroke)
+                        g.setLineDash([])
+                    }
+                    else if (g.strokeStyle && skanaar.hasSubstring(r.assoc, '-@-')){
+                        g.appendStrokeAlpha(0.5)
+                        strokePath(path)
+                        g.strokeStyle(config.stroke)
+                    }
+                    else if (g.setLineDash && skanaar.hasSubstring(r.assoc, '--')){
+                            var dash = Math.max(4, 2*config.lineWidth)
+                            g.setLineDash([dash, dash])
+                            strokePath(path)
+                            g.setLineDash([])
+                    }
+                    else
+                            strokePath(path)
 		}
 
-		function drawArrowEnd(id, path, end){
+		function drawArrowEnd(id, path, end, semistroke){
 			if (id === '>' || id === '<')
-				drawArrow(path, filled, end)
+				drawArrow(path, filled, end, semistroke)
 			else if (id === ':>' || id === '<:')
-				drawArrow(path, empty, end)
+				drawArrow(path, empty, end, semistroke)
+                        else if (id === ':<' || id=== '>:') {
+				drawArrow(path, empty, end, semistroke, empty, inhibition);
+                            }
 			else if (id === '+')
-				drawArrow(path, filled, end, diamond)
-			else if (id === 'o')
-				drawArrow(path, empty, end, diamond)
+				drawArrow(path, filled, end, semistroke, diamond)
+			else if (id === 'o') {
+				drawArrow(path, empty, end, semistroke, diamond);
+                            }
 		}
 
-		var tokens = r.assoc.split('-')
-		drawArrowEnd(_.last(tokens), path, end)
-		drawArrowEnd(_.first(tokens), path.reverse(), start)
+		
+		drawArrowEnd(_.last(tokens), path, end, skanaar.hasSubstring(r.assoc, '-@-'))
+		drawArrowEnd(_.first(tokens), path.reverse(), start, skanaar.hasSubstring(r.assoc, '-@-'))
 	}
 
 	function rectIntersection(p1, p2, rect) {
@@ -283,8 +330,18 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 		}
 		return p2;
 	}
+        
+        function growRect(rect, grow) {
+            var newrect = {};
+            newrect.x = rect.x-grow;
+            newrect.y = rect.y-grow;
+            newrect.width = rect.width + 2*grow;
+            newrect.height = rect.height + 2*grow;
+            
+            return newrect;
+        }
 
-	function drawArrow(path, isOpen, arrowPoint, diamond){
+	function drawArrow(path, isOpen, arrowPoint, semistroke, diamond, inhibition){
 		var size = (config.spacing - 2*config.edgeMargin) * config.arrowSize / 30
 		var v = vm.diff(path[path.length-2], _.last(path))
 		var nv = vm.normalize(v)
@@ -293,14 +350,29 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 		var t = vm.rot(nv)
 		var arrowButt = (diamond) ? getArrowBase(14)
 				: (isOpen && !config.fillArrows) ? getArrowBase(5) : arrowBase
+                
+                arrowBase = (inhibition)? arrowPoint : arrowBase
+                arrowButt = (inhibition)? arrowBase : arrowButt
+                arrowPoint = (inhibition)? arrowBase : arrowPoint
+                
+                var semiwidth = (inhibition)? 6 : 4
+                
 		var arrow = [
-			vm.add(arrowBase, vm.mult(t, 4*size)),
+			vm.add(arrowBase, vm.mult(t, semiwidth*size)),
 			arrowButt,
-			vm.add(arrowBase, vm.mult(t, -4*size)),
+			vm.add(arrowBase, vm.mult(t, -semiwidth*size)),
 			arrowPoint
 		]
 		g.fillStyle(isOpen ? config.stroke : config.fill[0])
+                if(semistroke) g.appendFillAlpha(0.5)
+                if(semistroke) {
+                    g.strokeStyle(config.stroke);
+                    g.appendStrokeAlpha(0.2);
+                }
 		g.circuit(arrow).fillAndStroke()
+                
+                g.fillStyle(isOpen ? config.stroke : config.fill[0])
+                g.strokeStyle(config.stroke)
 	}
 
 	function snapToPixels(){

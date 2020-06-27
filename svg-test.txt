@@ -1,0 +1,18 @@
+
+#.receptor: fill=#8f8 
+#.factor: fill=#88FFFF 
+#.extfactor: fill=#FF8888 
+
+[<receptor>Tie-2]
+[<actor>Ang-2] -:< [Tie-2]
+
+[<actor>High] - [<actor>concentration]
+[<actor>concentration] - [<actor> of Ang-2]
+[<actor>of Ang-2] -:> [Tie-2]
+
+#direction: right
+#padding: 10
+#spacing: 50
+#lineWidth: 2
+#leading: 1.5
+#fontSize: 24

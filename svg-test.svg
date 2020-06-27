@@ -1,0 +1,38 @@
+<svg version="1.1" baseProfile="full" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:ev="http://www.w3.org/2001/xml-events" style="font-weight:; font-size:24pt; font-family:'SvgFont', serif;;stroke-width:2;stroke-linejoin:round;stroke-linecap:round">
+  <style type="text/css">
+   <![CDATA[
+    @font-face {
+        font-family: 'SvgFont'
+        src: url('svg-font.ttf');
+    }
+   ]]>
+ </style>
+    
+    <path d="M378.5 43 L413 43 L425.8 55 L425.8 55 " style="stroke:#33322E;fill:none;"></path>
+<path d="M419 62.3 L425.8 55 L432.6 47.7 L425.8 55 Z" style="stroke:#33322E;fill:#eee8d5;"></path>
+<path d="M72 149 L94 149 L116 149 L116 149 " style="stroke:#33322E;fill:none;"></path>
+<path d="M253 149 L275 149 L297 149 L297 149 " style="stroke:#33322E;fill:none;"></path>
+<path d="M391 149 L413 149 L436.5 127 L436.5 127 " style="stroke:#33322E;fill:none;"></path>
+<path d="M428.9 143.3 L424.3 138.4 L419.7 133.5 L436.5 127 Z" style="stroke:#33322E;fill:#eee8d5;"></path>
+<rect x="438" y="68" height="56" width="63" style="stroke:#33322E;fill:#8f8;"></rect>
+<text x="448" y="108" style="font-family: 'SvgFont';">Tie-2</text>
+<circle r="5" cx="344" cy="12.5" style="stroke:#33322E;fill:#eee8d5;"></circle>
+<path d="M344 17.5 L344 27.5" style="stroke:#33322E;fill:none;"></path>
+<path d="M339 22.5 L349 22.5" style="stroke:#33322E;fill:none;"></path>
+<path d="M339 32.5 L344 27.5 L349 32.5" style="stroke:#33322E;fill:none;"></path>
+<text x="323.3" y="62.5" style="">Ang-2</text>
+<circle r="5" cx="42" cy="118.5" style="stroke:#33322E;fill:#eee8d5;"></circle>
+<path d="M42 123.5 L42 133.5" style="stroke:#33322E;fill:none;"></path>
+<path d="M37 128.5 L47 128.5" style="stroke:#33322E;fill:none;"></path>
+<path d="M37 138.5 L42 133.5 L47 138.5" style="stroke:#33322E;fill:none;"></path>
+<text x="25" y="168.5" style="">High</text>
+<circle r="5" cx="184.5" cy="118.5" style="stroke:#33322E;fill:#eee8d5;"></circle>
+<path d="M184.5 123.5 L184.5 133.5" style="stroke:#33322E;fill:none;"></path>
+<path d="M179.5 128.5 L189.5 128.5" style="stroke:#33322E;fill:none;"></path>
+<path d="M179.5 138.5 L184.5 133.5 L189.5 138.5" style="stroke:#33322E;fill:none;"></path>
+<text x="129.3" y="168.5" style="">concentration</text>
+<circle r="5" cx="344" cy="118.5" style="stroke:#33322E;fill:#eee8d5;"></circle>
+<path d="M344 123.5 L344 133.5" style="stroke:#33322E;fill:none;"></path>
+<path d="M339 128.5 L349 128.5" style="stroke:#33322E;fill:none;"></path>
+<path d="M339 138.5 L344 133.5 L349 138.5" style="stroke:#33322E;fill:none;"></path>
+<text x="310" y="168.5" style="">of Ang-2</text></svg>

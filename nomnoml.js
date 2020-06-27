@@ -34,6 +34,7 @@ var nomnoml = nomnoml || {};
 			padding: (+d.padding) || 8,
 			spacing: (+d.spacing) || 40,
 			stroke: d.stroke || '#33322E',
+                        semistroke: d.semistroke || '#AAAAAA',
 			title: d.title || 'nomnoml',
 			zoom: +d.zoom || 1,
 			styles: userStyles
@@ -58,7 +59,7 @@ var nomnoml = nomnoml || {};
 		var config = getConfig(ast.directives);
 		var measurer = {
 			setFont: function (a, b, c) { setFont(a, b, c, graphics); },
-			textWidth: function (s) { return graphics.measureText(s).width },
+			textWidth: function (s) { return graphics.measureText(stripBracketedNumbers(s)).width },
 			textHeight: function () { return config.leading * config.fontSize }
 		};
 		var layout = nomnoml.layout(measurer, config, ast);
@@ -77,7 +78,7 @@ var nomnoml = nomnoml || {};
 		var config = getConfig(ast.directives)
 		var skCanvas = skanaar.Svg('')
 		function setFont(config, isBold, isItalic) {
-			var style = (isBold === 'bold' ? 'bold' : '')
+			var style = (isBold === 'bold' ? '' : '') //no bold in svg
 			if (isItalic) style = 'italic ' + style
 			var defFont = 'Helvetica, sans-serif'
 			var template = 'font-weight:#; font-size:#pt; font-family:\'#\', #'
@@ -86,7 +87,7 @@ var nomnoml = nomnoml || {};
 		}
 		var measurer = {
 			setFont: function (a, b, c) { setFont(a, b, c, skCanvas); },
-			textWidth: function (s) { return skCanvas.measureText(s).width },
+			textWidth: function (s) { return skCanvas.measureText(stripBracketedNumbers(s)).width },
 			textHeight: function () { return config.leading * config.fontSize }
 		};
 		var layout = nomnoml.layout(measurer, config, ast)
@@ -94,3 +95,7 @@ var nomnoml = nomnoml || {};
 		return skCanvas.serialize()
 	};
 })();
+
+function stripBracketedNumbers(s) {
+    return s.replace(/\([0-9^)]*\) */g, "");
+}

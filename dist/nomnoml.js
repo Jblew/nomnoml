@@ -310,6 +310,9 @@ skanaar.Svg = function (globalStyle){
 		},
 		font: function (font){
 			last(states).font = font;
+                        console.log("<!--\n\n");
+                        console.log(font);
+                        console.log("-->");
 		},
 		strokeStyle: function (stroke){
 			last(states).stroke = stroke
@@ -486,7 +489,7 @@ break;
 case 9:this.$ = $$[$0-1].concat([[]]);
 break;
 case 10:
-           var t = $$[$0-1].trim().replace(/\\(\[|\]|\|)/g, '$'+'1').match('^(.*?)([<:o+]*-/?-*[:o+>]*)(.*)$');
+           var t = $$[$0-1].trim().replace(/\\(\[|\]|\|)/g, '$'+'1').match('^(.*?)([<>:o+]*-/?@?-*[:o+><]*)(.*)$');
            this.$ = {assoc:t[2], start:$$[$0-2], end:$$[$0], startLabel:t[1].trim(), endLabel:t[3].trim()};
   
 break;
@@ -1333,10 +1336,12 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 	}
 
 	function renderCompartment(compartment, style, level){
+            
 		g.save()
 		g.translate(padding, padding)
 		g.fillStyle(config.stroke)
 		_.each(compartment.lines, function (text, i){
+                        text = stripBracketedNumbers(text);
 			g.textAlign(style.center ? 'center' : 'left')
 			var x = style.center ? compartment.width/2 - padding : 0
 			var y = (0.5+(i+0.5)*config.leading)*config.fontSize
@@ -1357,6 +1362,8 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 	}
 
 	function renderNode(node, level){
+                
+            
 		var x = Math.round(node.x-node.width/2)
 		var y = Math.round(node.y-node.height/2)
 		var style = styles[node.type] || styles.CLASS
@@ -1410,15 +1417,16 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 			g.path(p).stroke()
 	}
 
-	var empty = false, filled = true, diamond = true
+	var empty = false, filled = true, diamond = true, inhibition = true
 
 	function renderRelation(r, compartment){
 		var startNode = _.findWhere(compartment.nodes, {name:r.start})
 		var endNode = _.findWhere(compartment.nodes, {name:r.end})
-
-		var start = rectIntersection(r.path[1], _.first(r.path), startNode)
-		var end = rectIntersection(r.path[r.path.length-2], _.last(r.path), endNode)
-
+                var tokens = r.assoc.split('-')
+                         
+		var start = rectIntersection(r.path[1], _.first(r.path), growRect(startNode,  (_.first(tokens)===":<" || _.first(tokens)===">:")? 13 : 3))
+		var end = rectIntersection(r.path[r.path.length-2], _.last(r.path), growRect(endNode, (_.last(tokens)===":<" || _.last(tokens)===">:")? 13 : 3))
+                
 		var path = _.flatten([start, _.tail(_.initial(r.path)), end])
 		var fontSize = config.fontSize
 
@@ -1445,13 +1453,17 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 				drawArrow(path, filled, end)
 			else if (id === ':>' || id === '<:')
 				drawArrow(path, empty, end)
+                        else if (id === ':<' || id=== '>:') {
+				drawArrow(path, empty, end, empty, inhibition);
+                            }
 			else if (id === '+')
 				drawArrow(path, filled, end, diamond)
-			else if (id === 'o')
-				drawArrow(path, empty, end, diamond)
+			else if (id === 'o') {
+				drawArrow(path, empty, end, diamond);
+                            }
 		}
 
-		var tokens = r.assoc.split('-')
+		
 		drawArrowEnd(_.last(tokens), path, end)
 		drawArrowEnd(_.first(tokens), path.reverse(), start)
 	}
@@ -1471,8 +1483,18 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 		}
 		return p2;
 	}
+        
+        function growRect(rect, grow) {
+            var newrect = {};
+            newrect.x = rect.x-grow;
+            newrect.y = rect.y-grow;
+            newrect.width = rect.width + 2*grow;
+            newrect.height = rect.height + 2*grow;
+            
+            return newrect;
+        }
 
-	function drawArrow(path, isOpen, arrowPoint, diamond){
+	function drawArrow(path, isOpen, arrowPoint, diamond, inhibition){
 		var size = (config.spacing - 2*config.edgeMargin) * config.arrowSize / 30
 		var v = vm.diff(path[path.length-2], _.last(path))
 		var nv = vm.normalize(v)
@@ -1481,10 +1503,17 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 		var t = vm.rot(nv)
 		var arrowButt = (diamond) ? getArrowBase(14)
 				: (isOpen && !config.fillArrows) ? getArrowBase(5) : arrowBase
+                
+                arrowBase = (inhibition)? arrowPoint : arrowBase
+                arrowButt = (inhibition)? arrowBase : arrowButt
+                arrowPoint = (inhibition)? arrowBase : arrowPoint
+                
+                var semiwidth = (inhibition)? 6 : 4
+                
 		var arrow = [
-			vm.add(arrowBase, vm.mult(t, 4*size)),
+			vm.add(arrowBase, vm.mult(t, semiwidth*size)),
 			arrowButt,
-			vm.add(arrowBase, vm.mult(t, -4*size)),
+			vm.add(arrowBase, vm.mult(t, -semiwidth*size)),
 			arrowPoint
 		]
 		g.fillStyle(isOpen ? config.stroke : config.fill[0])
@@ -1507,8 +1536,7 @@ nomnoml.render = function (graphics, config, compartment, setFont){
 	snapToPixels()
 	renderCompartment(compartment, {}, 0)
 	g.restore()
-}
-;
+};
 var nomnoml = nomnoml || {};
 
 (function () {
@@ -1569,7 +1597,7 @@ var nomnoml = nomnoml || {};
 		var config = getConfig(ast.directives);
 		var measurer = {
 			setFont: function (a, b, c) { setFont(a, b, c, graphics); },
-			textWidth: function (s) { return graphics.measureText(s).width },
+			textWidth: function (s) { return graphics.measureText(stripBracketedNumbers(s)).width },
 			textHeight: function () { return config.leading * config.fontSize }
 		};
 		var layout = nomnoml.layout(measurer, config, ast);
@@ -1588,7 +1616,7 @@ var nomnoml = nomnoml || {};
 		var config = getConfig(ast.directives)
 		var skCanvas = skanaar.Svg('')
 		function setFont(config, isBold, isItalic) {
-			var style = (isBold === 'bold' ? 'bold' : '')
+			var style = (isBold === 'bold' ? '' : '') //no bold in svg
 			if (isItalic) style = 'italic ' + style
 			var defFont = 'Helvetica, sans-serif'
 			var template = 'font-weight:#; font-size:#pt; font-family:\'#\', #'
@@ -1597,7 +1625,7 @@ var nomnoml = nomnoml || {};
 		}
 		var measurer = {
 			setFont: function (a, b, c) { setFont(a, b, c, skCanvas); },
-			textWidth: function (s) { return skCanvas.measureText(s).width },
+			textWidth: function (s) { return skCanvas.measureText(stripBracketedNumbers(s)).width },
 			textHeight: function () { return config.leading * config.fontSize }
 		};
 		var layout = nomnoml.layout(measurer, config, ast)
@@ -1605,6 +1633,9 @@ var nomnoml = nomnoml || {};
 		return skCanvas.serialize()
 	};
 })();
-;
+
+function stripBracketedNumbers(s) {
+    return s.replace(/\([0-9^)]*\) */g, "");
+};
   return nomnoml;
 });
